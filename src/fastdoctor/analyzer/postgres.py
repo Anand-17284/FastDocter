@@ -1,16 +1,14 @@
 from fastdoctor.invariants.base import ContractNode
 from fastdoctor.invariants.normalization import normalize_type
 
-
 POSTGRES_TYPE_MAP = {
     "uuid": "UUID",
-    "character varying": "VARCHAR",
-    "varchar": "VARCHAR",
+    "character varying": "STRING",
+    "varchar": "STRING",
     "text": "STRING",
     "integer": "INTEGER",
     "bigint": "INTEGER",
 }
-
 
 def analyze_postgres_column(
     table_name: str,
@@ -18,6 +16,11 @@ def analyze_postgres_column(
     postgres_type: str,
     nullable: bool,
 ) -> ContractNode:
+
+    normalized_type = POSTGRES_TYPE_MAP.get(
+        postgres_type.lower(),
+        "UNKNOWN",
+    )
 
     normalized_type = POSTGRES_TYPE_MAP.get(
         postgres_type.lower(),

@@ -69,14 +69,14 @@ def test_three_layer_uuid_mismatch_is_detected():
         result.observed[
             "sqlalchemy:Order.id"
         ]
-        == "VARCHAR"
+        == "STRING"
     )
 
     assert (
         result.observed[
             "postgres:orders.id"
         ]
-        == "VARCHAR"
+        == "STRING"
     )
 
     assert (

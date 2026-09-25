@@ -1,3 +1,4 @@
+import psycopg
 from dataclasses import dataclass
 
 from fastdoctor.analyzer.postgres import POSTGRES_TYPE_MAP
@@ -33,3 +34,44 @@ def postgres_column_to_node(
             "nullable": column.is_nullable,
         },
     )
+
+def inspect_postgres_table(
+    table_name: str,
+) -> list[ContractNode]:
+
+    with psycopg.connect() as connection:
+
+        with connection.cursor() as cursor:
+
+            cursor.execute(
+                """
+                SELECT
+                    table_name,
+                    column_name,
+                    data_type,
+                    is_nullable
+                FROM information_schema.columns
+                WHERE table_name = %s
+                ORDER BY ordinal_position
+                """,
+                (table_name,),
+            )
+
+            rows = cursor.fetchall()
+
+    nodes = []
+
+    for row in rows:
+
+        column = PostgresColumnInfo(
+            table_name=row[0],
+            column_name=row[1],
+            data_type=row[2],
+            is_nullable=row[3] == "YES",
+        )
+
+        nodes.append(
+            postgres_column_to_node(column)
+        )
+
+    return nodes

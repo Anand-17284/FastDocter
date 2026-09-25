@@ -13,7 +13,7 @@ def test_sqlalchemy_model_is_analyzed():
     )
 
     assert order_id.layer == "sqlalchemy"
-    assert order_id.semantic_type == "VARCHAR"
+    assert order_id.semantic_type == "STRING"
     assert order_id.metadata["table_name"] == "orders"
     assert order_id.metadata["column_name"] == "id"
     assert order_id.metadata["nullable"] is False

@@ -26,3 +26,12 @@ class InvariantResult:
     observed: dict[str, str]
     failures: list[str] = field(default_factory=list)
     evidence: list[str] = field(default_factory=list)
+
+@dataclass
+class ThreeLayerMapping:
+    field_name: str
+    pydantic: ContractNode
+    sqlalchemy: ContractNode
+    postgres: ContractNode
+    evidence: list[str] = field(default_factory=list)
+    confidence: str = "UNKNOWN"

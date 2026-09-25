@@ -17,7 +17,7 @@ def test_postgres_column_to_node():
 
     assert node.id == "postgres:orders.id"
     assert node.layer == "postgres"
-    assert node.semantic_type == "VARCHAR"
+    assert node.semantic_type == "STRING"
 
     assert node.metadata["table_name"] == "orders"
     assert node.metadata["column_name"] == "id"

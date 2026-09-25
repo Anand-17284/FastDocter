@@ -13,5 +13,5 @@ def test_postgres_varchar_column_is_analyzed():
     assert node.id == "postgres:orders.id"
     assert node.layer == "postgres"
     assert node.name == "orders.id"
-    assert node.semantic_type == "VARCHAR"
+    assert node.semantic_type == "STRING"
     assert node.metadata["nullable"] is False
