@@ -80,11 +80,16 @@ def check_three_layer_mapping(
             )
         )
 
-    expected = (
-        next(iter(unique_types))
-        if len(unique_types) == 1
-        else None
-    )
+    expected = observed[
+        mapping.pydantic.id
+    ]
+
+    violated_layers = []
+
+    if not passed:
+        for node_id, semantic_type in observed.items():
+            if semantic_type != expected:
+                violated_layers.append(node_id)
 
     evidence = [
         *mapping.evidence,
@@ -92,11 +97,13 @@ def check_three_layer_mapping(
     ]
 
     return InvariantResult(
-        invariant_id="I-001",
-        name="Three-layer semantic type consistency",
-        passed=passed,
-        expected=expected,
-        observed=observed,
-        failures=failures,
-        evidence=evidence,
-    )
+    invariant_id="I-001",
+    name="Three-layer semantic type consistency",
+    passed=passed,
+    expected=expected,
+    observed=observed,
+    failures=failures,
+    evidence=evidence,
+    field_name=mapping.field_name,
+    violated_layers=violated_layers,
+)
