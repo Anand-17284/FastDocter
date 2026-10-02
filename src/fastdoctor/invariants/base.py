@@ -19,15 +19,37 @@ class FieldMapping:
 
 @dataclass
 class InvariantResult:
+
     invariant_id: str
+
     name: str
-    passed: bool
+
+    passed: bool | None
+
     expected: str | None
+
     observed: dict[str, str]
+
     failures: list[str] = field(default_factory=list)
+
     evidence: list[str] = field(default_factory=list)
+
     field_name: str | None = None
+
     violated_layers: list[str] = field(default_factory=list)
+
+    status: str = field(init=False)
+
+    def __post_init__(self):
+
+        if self.passed is True:
+            self.status = "VERIFIED"
+
+        elif self.passed is False:
+            self.status = "VIOLATED"
+
+        else:
+            self.status = "UNVERIFIED"
     
 @dataclass
 class ThreeLayerMapping:

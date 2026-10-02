@@ -4,14 +4,13 @@ from dataclasses import dataclass
 from fastdoctor.analyzer.postgres import POSTGRES_TYPE_MAP
 from fastdoctor.invariants.base import ContractNode
 
-
 @dataclass
 class PostgresColumnInfo:
     table_name: str
     column_name: str
     data_type: str
     is_nullable: bool
-
+    udt_name: str | None = None
 
 def postgres_column_to_node(
     column: PostgresColumnInfo,
@@ -19,8 +18,16 @@ def postgres_column_to_node(
 
     semantic_type = POSTGRES_TYPE_MAP.get(
         column.data_type.lower(),
-        "UNKNOWN",
     )
+
+    if semantic_type is None and column.udt_name:
+        semantic_type = POSTGRES_TYPE_MAP.get(
+            column.udt_name.lower(),
+            "UNKNOWN",
+        )
+
+    if semantic_type is None:
+        semantic_type = "UNKNOWN"
 
     return ContractNode(
         id=f"postgres:{column.table_name}.{column.column_name}",
@@ -31,6 +38,7 @@ def postgres_column_to_node(
             "table_name": column.table_name,
             "column_name": column.column_name,
             "raw_type": column.data_type,
+            "udt_name": column.udt_name,
             "nullable": column.is_nullable,
         },
     )
@@ -49,7 +57,8 @@ def inspect_postgres_table(
                     table_name,
                     column_name,
                     data_type,
-                    is_nullable
+                    is_nullable,
+                    udt_name
                 FROM information_schema.columns
                 WHERE table_name = %s
                 ORDER BY ordinal_position
@@ -68,6 +77,7 @@ def inspect_postgres_table(
             column_name=row[1],
             data_type=row[2],
             is_nullable=row[3] == "YES",
+            udt_name=row[4],
         )
 
         nodes.append(

@@ -68,15 +68,27 @@ def check_three_layer_mapping(
 
     unique_types = set(observed.values())
 
-    passed = len(unique_types) == 1
+    if "UNKNOWN" in unique_types:
+        passed = None
+    else:
+        passed = len(unique_types) == 1
 
     failures = []
 
-    if not passed:
+    if passed is False:
         failures.append(
             (
                 "Semantic type mismatch across three layers "
                 f"for field '{mapping.field_name}'"
+            )
+        )
+
+    elif passed is None:
+        failures.append(
+            (
+                "Semantic type could not be verified because "
+                f"at least one layer is UNKNOWN for field "
+                f"'{mapping.field_name}'"
             )
         )
 
@@ -86,7 +98,7 @@ def check_three_layer_mapping(
 
     violated_layers = []
 
-    if not passed:
+    if passed is False:
         for node_id, semantic_type in observed.items():
             if semantic_type != expected:
                 violated_layers.append(node_id)

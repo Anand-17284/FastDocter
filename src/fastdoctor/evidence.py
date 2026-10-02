@@ -53,6 +53,7 @@ class IncidentEvidence:
                     "name": invariant.name,
                     "field_name": invariant.field_name,
                     "passed": invariant.passed,
+                    "status": invariant.status,
                     "expected": invariant.expected,
                     "observed": invariant.observed,
                     "failures": invariant.failures,
