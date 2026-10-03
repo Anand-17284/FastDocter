@@ -54,9 +54,12 @@ class InvariantResult:
 @dataclass
 class ThreeLayerMapping:
     field_name: str
-    pydantic: ContractNode
-    sqlalchemy: ContractNode
-    postgres: ContractNode
+    pydantic: ContractNode | None
+    sqlalchemy: ContractNode | None
+    postgres: ContractNode | None
     relationship: str
     evidence: list[str] = field(default_factory=list)
     confidence: str = "UNKNOWN"
+    missing_layers: list[str] = field(default_factory=list)
+    ambiguous_layers: list[str] = field(default_factory=list)
+    candidate_ids: dict[str, list[str]] = field(default_factory=dict)

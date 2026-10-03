@@ -40,9 +40,12 @@ class IncidentEvidence:
                     "field_name": mapping.field_name,
                     "relationship": mapping.relationship,
                     "confidence": mapping.confidence,
-                    "pydantic": mapping.pydantic.id,
-                    "sqlalchemy": mapping.sqlalchemy.id,
-                    "postgres": mapping.postgres.id,
+                    "pydantic": mapping.pydantic.id if mapping.pydantic else None,
+                    "sqlalchemy": mapping.sqlalchemy.id if mapping.sqlalchemy else None,
+                    "postgres": mapping.postgres.id if mapping.postgres else None,
+                    "missing_layers": mapping.missing_layers,
+                    "ambiguous_layers": mapping.ambiguous_layers,
+                    "candidate_ids": mapping.candidate_ids,
                     "evidence": mapping.evidence,
                 }
                 for mapping in self.mappings

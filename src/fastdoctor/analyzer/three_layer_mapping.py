@@ -75,64 +75,99 @@ def map_three_layers(
     postgres_nodes: list[ContractNode],
 ) -> list[ThreeLayerMapping]:
 
+    nodes_by_layer = {
+        "pydantic": pydantic_nodes,
+        "sqlalchemy": sqlalchemy_nodes,
+        "postgres": postgres_nodes,
+    }
+    candidates_by_field: dict[str, dict[str, list[ContractNode]]] = {}
+
+    # Preserve Pydantic field order, then append database-only fields in
+    # their input order so missing contracts are still represented.
+    for layer, nodes in nodes_by_layer.items():
+        for node in nodes:
+            field_name = node.name.split(".")[-1]
+            field_candidates = candidates_by_field.setdefault(
+                field_name,
+                {name: [] for name in nodes_by_layer},
+            )
+            field_candidates[layer].append(node)
+
     mappings = []
 
-    for pydantic_node in pydantic_nodes:
+    for field_name, field_candidates in candidates_by_field.items():
+        selected = {
+            layer: candidates[0] if len(candidates) == 1 else None
+            for layer, candidates in field_candidates.items()
+        }
+        missing_layers = [
+            layer
+            for layer, candidates in field_candidates.items()
+            if not candidates
+        ]
+        ambiguous_layers = [
+            layer
+            for layer, candidates in field_candidates.items()
+            if len(candidates) > 1
+        ]
+        candidate_ids = {
+            layer: [node.id for node in candidates]
+            for layer, candidates in field_candidates.items()
+        }
 
-        pydantic_field = pydantic_node.name.split(".")[-1]
-
-        sqlalchemy_match = next(
-            (
-                node
-                for node in sqlalchemy_nodes
-                if node.name.split(".")[-1] == pydantic_field
-            ),
-            None,
+        evidence = [
+            f"{layer} candidates for '{field_name}': "
+            f"{', '.join(ids) if ids else 'none'}"
+            for layer, ids in candidate_ids.items()
+        ]
+        evidence.extend(
+            f"Field '{field_name}' is missing from {layer}"
+            for layer in missing_layers
+        )
+        evidence.extend(
+            f"Field '{field_name}' is ambiguous in {layer}: "
+            f"{', '.join(candidate_ids[layer])}"
+            for layer in ambiguous_layers
         )
 
-        postgres_match = next(
-            (
-                node
-                for node in postgres_nodes
-                if node.name.split(".")[-1] == pydantic_field
-            ),
-            None,
-        )
-
-        if sqlalchemy_match is None:
-            continue
-
-        if postgres_match is None:
-            continue
-
-        confidence, confidence_reason = (
-            calculate_mapping_confidence(
+        confidence = "UNKNOWN"
+        relationship = "Insufficient evidence to establish a unique mapping"
+        if not missing_layers and not ambiguous_layers:
+            pydantic_node = selected["pydantic"]
+            sqlalchemy_node = selected["sqlalchemy"]
+            postgres_node = selected["postgres"]
+            # All nodes are selected when each layer has exactly one candidate.
+            assert pydantic_node is not None
+            assert sqlalchemy_node is not None
+            assert postgres_node is not None
+            confidence, relationship = calculate_mapping_confidence(
                 pydantic_node,
-                sqlalchemy_match,
-                postgres_match,
+                sqlalchemy_node,
+                postgres_node,
             )
-        )
+            evidence.extend([
+                f"Pydantic field: {pydantic_node.id}",
+                f"SQLAlchemy field: {sqlalchemy_node.id}",
+                f"PostgreSQL column: {postgres_node.id}",
+                f"Mapping reason: {relationship}",
+                f"SQLAlchemy table: {sqlalchemy_node.metadata.get('table_name', 'UNKNOWN')}",
+                f"PostgreSQL table: {postgres_node.metadata.get('table_name', 'UNKNOWN')}",
+                f"SQLAlchemy primary key: {sqlalchemy_node.metadata.get('primary_key', False)}",
+            ])
 
         mappings.append(
             ThreeLayerMapping(
-                field_name=pydantic_field,
-                pydantic=pydantic_node,
-                sqlalchemy=sqlalchemy_match,
-                postgres=postgres_match,
-                relationship=confidence_reason,
-                evidence=[
-                    f"Pydantic field: {pydantic_node.id}",
-                    f"SQLAlchemy field: {sqlalchemy_match.id}",
-                    f"PostgreSQL column: {postgres_match.id}",
-                    f"Mapping reason: {confidence_reason}",
-                    f"Field name matches across all layers: {pydantic_field == sqlalchemy_match.name.split('.')[-1] == postgres_match.name.split('.')[-1]}",
-                    f"SQLAlchemy table: {sqlalchemy_match.metadata.get('table_name', 'UNKNOWN')}",
-                    f"PostgreSQL table: {postgres_match.metadata.get('table_name', 'UNKNOWN')}",
-                    f"SQLAlchemy primary key: {sqlalchemy_match.metadata.get('primary_key', False)}",
-                    f"PostgreSQL column: {postgres_match.metadata.get('column_name', postgres_match.name.split('.')[-1])}",
-                ],
+                field_name=field_name,
+                pydantic=selected["pydantic"],
+                sqlalchemy=selected["sqlalchemy"],
+                postgres=selected["postgres"],
+                relationship=relationship,
+                evidence=evidence,
                 confidence=confidence,
+                missing_layers=missing_layers,
+                ambiguous_layers=ambiguous_layers,
+                candidate_ids=candidate_ids,
             )
         )
-        
+
     return mappings
