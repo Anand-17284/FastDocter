@@ -54,6 +54,7 @@ def test_build_incident_evidence_from_real_api_failure():
         pydantic_model=OrderResponse,
         sqlalchemy_model=Order,
         table_name="orders",
+        schema_name="public",
     )
 
     # 3. Map corresponding fields.

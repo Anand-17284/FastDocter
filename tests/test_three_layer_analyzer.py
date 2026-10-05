@@ -10,6 +10,7 @@ def test_analyze_three_layers():
         pydantic_model=OrderResponse,
         sqlalchemy_model=Order,
         table_name="orders",
+        schema_name="public",
     )
 
     assert "pydantic" in result
@@ -53,6 +54,7 @@ def test_three_layer_nullability():
         OrderResponse,
         Order,
         "orders",
+        schema_name="public",
     )
 
     mappings = map_three_layers(

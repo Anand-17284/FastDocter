@@ -49,6 +49,7 @@ def test_incident_evidence_to_dict():
         pydantic_model=OrderResponse,
         sqlalchemy_model=Order,
         table_name="orders",
+        schema_name="public",
     )
 
     mappings = map_three_layers(

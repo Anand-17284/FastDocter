@@ -39,6 +39,7 @@ def test_real_incident_creates_json_artifact(tmp_path):
         pydantic_model=OrderResponse,
         sqlalchemy_model=Order,
         table_name="orders",
+        schema_name="public",
     )
 
     # 3. Map the layers
@@ -130,4 +131,3 @@ def test_real_incident_creates_json_artifact(tmp_path):
         "VIOLATIONS:",
         len(data["violated_invariants"]),
     )
-    
